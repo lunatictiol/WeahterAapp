@@ -19,6 +19,7 @@ class WeatherManager{
         
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error==nil else{
+                print("1")
                 completion(.failure(WeatherError.invalidData))
                 return
             }
@@ -28,8 +29,31 @@ class WeatherManager{
                 completion(.success(weatherResponse))
             }
             catch{
+                print("2")
                 completion(.failure(WeatherError.invalidData))
             }
+        }.resume()
+    }
+    
+    func getWeatherData(for city: String, completion: @escaping (Result<WeatherResponse, WeatherError>) -> Void) {
+        guard let url = URL(string: "https://api.openweathermap.org/data/2.5/weather?q=\(city)&appid=\(apiKey)&units=metric") else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data, error == nil else {
+                completion(.failure(WeatherError.invalidData))
+                return
+            }
+            
+            do {
+                let weatherResponse = try JSONDecoder().decode(WeatherResponse.self, from: data)
+                completion(.success(weatherResponse))
+            } catch {
+                completion(.failure(.invalidData))
+            }
+            
         }.resume()
     }
     
@@ -40,45 +64,40 @@ enum WeatherError:Error{
     case invalidData
 }
 struct WeatherResponse: Decodable {
-    
-    var weather:[WeatherDetaitls]
+    var weather: [WeatherDetails]
     var main: MainResponse
     var name: String
-    var wind : WindResponse
-    var Sys :  Country
+    var wind: WindResponse
+    var sys: Country
     
-    // MARK: - Main
-    struct MainResponse : Decodable{
-        var temp :Double
-        var feels_Like :Double
-        var temp_Min :Double
-        var temp_Max :Double
-        var pressure :Double
-        var humidity :Double
-        
+    struct WeatherDetails: Decodable {
+        var id: Double
+        var main: String
+        var description: String
+        var icon: String
     }
     
-    
-    // MARK: - country
-    struct Country: Decodable {
-        var country: String
-        var sunrise, sunset: Int
+    struct MainResponse: Decodable {
+        var temp: Double
+        var feels_like: Double
+        var temp_min: Double
+        var temp_max: Double
+        var pressure: Double
+        var humidity: Double
     }
     
-    // MARK: - Weather
-    struct WeatherDetaitls: Decodable {
-        var id: Int
-        var main, description, icon: String
-    }
-    
-    // MARK: - Wind
     struct WindResponse: Decodable {
         var speed: Double
-        
     }
-    var conditionName: String{
-        guard let firstWeather = weather.first else {return "cloud"}
-        switch firstWeather.id{
+    
+    struct Country: Decodable {
+        var country: String
+    }
+    
+    var conditionName: String {
+        guard let firstWeather = weather.first else { return "cloud" }
+        
+        switch firstWeather.id {
         case 200...232:
             return "cloud.bolt"
         case 300...321:
@@ -87,7 +106,7 @@ struct WeatherResponse: Decodable {
             return "cloud.rain"
         case 600...622:
             return "cloud.snow"
-        case 700...781:
+        case 701...781:
             return "cloud.fog"
         case 800:
             return "sun.max"
@@ -95,19 +114,16 @@ struct WeatherResponse: Decodable {
             return "cloud.bolt"
         default:
             return "cloud"
-                                                
         }
-        
     }
     
 }
 
-extension WeatherResponse.MainResponse{
-    var tempMin : Double{
-        return temp_Min
+extension WeatherResponse.MainResponse {
+    var tempMin: Double {
+        return temp_min
     }
-    var tempMax : Double{
-        return temp_Max
+    var tempMax: Double {
+        return temp_max
     }
 }
-

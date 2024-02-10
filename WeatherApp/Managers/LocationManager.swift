@@ -23,9 +23,11 @@ class LocationManager: NSObject,ObservableObject,CLLocationManagerDelegate {
         manager.requestLocation()
     }
     
-    func locationmanager(_ manager:CLLocationManager,didUpdateLocation locations:[CLLocation]){
-        location = locations.first?.coordinate
-        isLoading = false
+    func locationManager(_ manager:CLLocationManager,didUpdateLocations locations:[CLLocation]){
+        if let  loca = locations.first?.coordinate{
+            location = loca
+            isLoading = false
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
